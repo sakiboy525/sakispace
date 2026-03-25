@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>拼豆图纸生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 15px;
+        }
+
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9ff;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:active {
+            background: #e8ebff;
+            transform: scale(0.98);
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            font-size: 15px;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .upload-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .upload-area.has-image {
+            border-color: #38ef7d;
+            background: #f0fff4;
+        }
+
+        .image-preview {
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .preview-wrapper {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            display: block;
+            background: #f8f9fa;
+        }
+
+        .preview-info {
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .preview-size {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .btn-remove {
+            padding: 6px 16px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-remove:active {
+            background: #fa5252;
+            transform: scale(0.95);
+        }
+
+        .controls {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .control-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .control-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-weight: 500;
+            color: #555;
+            font-size: 13px;
+        }
+
+        input[type="number"],
+        select {
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            background: white;
+            width: 100%;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(17, 153, 142, 0.3);
+        }
+
+        .btn-success:active:not(:disabled) {
+            box-shadow: 0 2px 8px rgba(17, 153, 142, 0.3);
+        }
+
+        .stats {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .canvas-wrapper {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            margin: 0 auto;
+        }
+
+        .palette {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .palette h3 {
+            margin-bottom: 12px;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .color-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .color-box {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            flex-shrink: 0;
+        }
+
+        .color-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .color-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 13px;
+            margin-bottom: 2px;
+        }
+
+        .color-count {
+            color: #667eea;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .tips {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+        }
+
+        .tips h4 {
+            font-size: 14px;
+            color: #856404;
+            margin-bottom: 8px;
+        }
+
+        .tips ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .tips li {
+            font-size: 12px;
+            color: #856404;
+            margin-bottom: 5px;
+            padding-left: 15px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .tips li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* 平板和桌面端适配 */
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                border-radius: 20px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                min-height: auto;
+            }
+
+            .header {
+                border-radius: 20px 20px 0 0;
+                padding: 30px;
+            }
+
+            .header h1 {
+                font-size: 32px;
+            }
+
+            .content {
+                padding: 30px;
+            }
+
+            .color-list {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .control-row {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .color-list {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* 小屏幕手机适配 */
+        @media (max-width: 375px) {
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .control-row {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .color-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 拼豆图纸生成器</h1>
+            <p>上传图片，自动生成拼豆图纸</p>
+        </div>
+        
+        <div class="content">
+            <!-- 上传区域 -->
+            <div class="upload-area" onclick="document.getElementById('imageInput').click()">
+                <input type="file" id="imageInput" accept="image/*">
+                <div class="upload-icon">📷</div>
+                <div class="upload-text">点击上传图片</div>
+                <div class="upload-hint">支持 JPG、PNG 格式</div>
+            </div>
+            
+            <!-- 图片预览 -->
+            <div id="imagePreview" class="image-preview" style="display: none;"></div>
+            
+            <!-- 参数设置 -->
+            <div class="controls">
+                <div class="control-row">
+                    <div class="control-group">
+                        <label for="pixelSize">画布尺寸</label>
+                        <input type="number" id="pixelSize" value="50" min="10" max="100">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="maxColors">颜色数量</label>
+                        <input type="number" id="maxColors" value="60" min="10" max="200">
+                    </div>
+                </div>
+                
+                <div class="control-row">
+                    <div class="control-group">
+                        <label for="colorPalette">色卡选择</label>
+                        <select id="colorPalette">
+                            <option value="mard188">MARD 188色</option>
+                            <option value="mard221">MARD 221色</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="palettePosition">色号位置</label>
+                        <select id="palettePosition">
+                            <option value="bottom">底部</option>
+                            <option value="right">右侧</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="control-row">
+                    <div class="control-group">
+                        <label for="fontSize">字体大小</label>
+                        <input type="number" id="fontSize" value="7" min="5" max="15">
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="showColorName" checked>
+                            <label for="showColorName">显示色号</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 操作按钮 -->
+            <div class="button-group">
+                <button id="generateBtn" class="btn-primary" disabled>
+                    <span>✨</span> 生成图纸
+                </button>
+                <button id="downloadBtn" class="btn-success" disabled>
+                    <span>📥</span> 下载图纸
+                </button>
+            </div>
+            
+            <!-- 统计信息 -->
+            <div class="stats" id="stats" style="display: none;">
+                <div class="stat-item">
+                    <div class="stat-value" id="statSize">-</div>
+                    <div class="stat-label">画布尺寸</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statColors">-</div>
+                    <div class="stat-label">使用颜色数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statPixels">-</div>
+                    <div class="stat-label">总像素数</div>
+                </div>
+            </div>
+            
+            <!-- 加载提示 -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div class="loading-text">正在生成图纸，请稍候...</div>
+            </div>
+            
+            <!-- 画布区域 -->
+            <div class="canvas-wrapper" id="canvasContainer" style="display: none;">
+                <canvas id="patternCanvas"></canvas>
+            </div>
+            
+            <!-- 色卡统计 -->
+            <div class="palette" id="paletteSection" style="display: none;">
+                <h3>🎨 色卡统计</h3>
+                <div class="color-list" id="colorList"></div>
+            </div>
+            
+            <!-- 使用提示 -->
+            <div class="tips">
+                <h4>💡 使用提示</h4>
+                <ul>
+                    <li>建议使用边缘清晰的图片效果更佳</li>
+                    <li>画布尺寸不建议超过50，否则色号显示不清晰</li>
+                    <li>颜色数量越少，效果越简洁，制作越容易</li>
+                    <li>非正方形图片会自动居中裁剪</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // MARD色卡数据
+        const colorPalettes = {
+            mard188: [
+                { name: 'H1', rgb: [255, 255, 255] },
+                { name: 'H2', rgb: [255, 255, 204] },
+                { name: 'H3', rgb: [255, 255, 153] },
+                { name: 'H4', rgb: [255, 255, 102] },
+                { name: 'H5', rgb: [255, 255, 51] },
+                { name: 'H6', rgb: [255, 255, 0] },
+                { name: 'H7', rgb: [255, 230, 0] },
+                { name: 'H8', rgb: [255, 204, 0] },
+                { name: 'H9', rgb: [255, 179, 0] },
+                { name: 'H10', rgb: [255, 153, 0] },
+                { name: 'H11', rgb: [255, 128, 0] },
+                { name: 'H12', rgb: [255, 102, 0] },
+                { name: 'H13', rgb: [255, 77, 0] },
+                { name: 'H14', rgb: [255, 51, 0] },
+                { name: 'H15', rgb: [255, 26, 0] },
+                { name: 'H16', rgb: [255, 0, 0] },
+                { name: 'H17', rgb: [230, 0, 0] },
+                { name: 'H18', rgb: [204, 0, 0] },
+                { name: 'H19', rgb: [179, 0, 0] },
+                { name: 'H20', rgb: [153, 0, 0] },
+                { name: 'H21', rgb: [128, 0, 0] },
+                { name: 'H22', rgb: [102, 0, 0] },
+                { name: 'H23', rgb: [77, 0, 0] },
+                { name: 'H24', rgb: [51, 0, 0] },
+                { name: 'H25', rgb: [26, 0, 0] },
+                { name: 'H26', rgb: [0, 0, 0] },
+                { name: 'H27', rgb: [51, 51, 51] },
+                { name: 'H28', rgb: [102, 102, 102] },
+                { name: 'H29', rgb: [153, 153, 153] },
+                { name: 'H30', rgb: [204, 204, 204] },
+                { name: 'H31', rgb: [230, 230, 230] },
+                { name: 'H32', rgb: [242, 242, 242] },
+                { name: 'H33', rgb: [255, 242, 242] },
+                { name: 'H34', rgb: [255, 229, 229] },
+                { name: 'H35', rgb: [255, 217, 217] },
+                { name: 'H36', rgb: [255, 204, 204] },
+                { name: 'H37', rgb: [255, 191, 191] },
+                { name: 'H38', rgb: [255, 179, 179] },
+                { name: 'H39', rgb: [255, 166, 166] },
+                { name: 'H40', rgb: [255, 153, 153] },
+                { name: 'H41', rgb: [255, 140, 140] },
+                { name: 'H42', rgb: [255, 128, 128] },
+                { name: 'H43', rgb: [255, 115, 115] },
+                { name: 'H44', rgb: [255, 102, 102] },
+                { name: 'H45', rgb: [255, 89, 89] },
+                { name: 'H46', rgb: [255, 77, 77] },
+                { name: 'H47', rgb: [255, 64, 64] },
+                { name: 'H48', rgb: [255, 51, 51] },
+                { name: 'H49', rgb: [255, 38, 38] },
+                { name: 'H50', rgb: [255, 26, 26] },
+                { name: 'H51', rgb: [255, 13, 13] },
+                { name: 'H52', rgb: [255, 0, 0] },
+                { name: 'H53', rgb: [230, 0, 0] },
+                { name: 'H54', rgb: [204, 0, 0] },
+                { name: 'H55', rgb: [179, 0, 0] },
+                { name: 'H56', rgb: [153, 0, 0] },
+                { name: 'H57', rgb: [128, 0, 0] },
+                { name: 'H58', rgb: [102, 0, 0] },
+                { name: 'H59', rgb: [77, 0, 0] },
+                { name: 'H60', rgb: [51, 0, 0] },
+                { name: 'H61', rgb: [255, 242, 229] },
+                { name: 'H62', rgb: [255, 229, 204] },
+                { name: 'H63', rgb: [255, 217, 179] },
+                { name: 'H64', rgb: [255, 204, 153] },
+                { name: 'H65', rgb: [255, 191, 128] },
+                { name: 'H66', rgb: [255, 179, 102] },
+                { name: 'H67', rgb: [255, 166, 77] },
+                { name: 'H68', rgb: [255, 153, 51] },
+                { name: 'H69', rgb: [255, 140, 26] },
+                { name: 'H70', rgb: [255, 128, 0] },
+                { name: 'H71', rgb: [230, 115, 0] },
+                { name: 'H72', rgb: [204, 102, 0] },
+                { name: 'H73', rgb: [179, 89, 0] },
+                { name: 'H74', rgb: [153, 77, 0] },
+                { name: 'H75', rgb: [128, 64, 0] },
+                { name: 'H76', rgb: [102, 51, 0] },
+                { name: 'H77', rgb: [77, 38, 0] },
+                { name: 'H78', rgb: [51, 26, 0] },
+                { name: 'H79', rgb: [255, 255, 242] },
+                { name: 'H80', rgb: [255, 255, 229] },
+                { name: 'H81', rgb: [255, 255, 217] },
+                { name: 'H82', rgb: [255, 255, 204] },
+                { name: 'H83', rgb: [255, 255, 191] },
+                { name: 'H84', rgb: [255, 255, 179] },
+                { name: 'H85', rgb: [255, 255, 166] },
+                { name: 'H86', rgb: [255, 255, 153] },
+                { name: 'H87', rgb: [255, 255, 140] },
+                { name: 'H88', rgb: [255, 255, 128] },
+                { name: 'H89', rgb: [255, 255, 115] },
+                { name: 'H90', rgb: [255, 255, 102] },
+                { name: 'H91', rgb: [255, 255, 89] },
+                { name: 'H92', rgb: [255, 255, 77] },
+                { name: 'H93', rgb: [255, 255, 64] },
+                { name: 'H94', rgb: [255, 255, 51] },
+                { name: 'H95', rgb: [255, 255, 38] },
+                { name: 'H96', rgb: [255, 255, 26] },
+                { name: 'H97', rgb: [255, 255, 13] },
+                { name: 'H98', rgb: [255, 255, 0] },
+                { name: 'H99', rgb: [230, 230, 0] },
+                { name: 'H100', rgb: [204, 204, 0] },
+                { name: 'H101', rgb: [179, 179, 0] },
+                { name: 'H102', rgb: [153, 153, 0] },
+                { name: 'H103', rgb: [128, 128, 0] },
+                { name: 'H104', rgb: [102, 102, 0] },
+                { name: 'H105', rgb: [77, 77, 0] },
+                { name: 'H106', rgb: [51, 51, 0] },
+                { name: 'H107', rgb: [242, 255, 242] },
+                { name: 'H108', rgb: [229, 255, 229] },
+                { name: 'H109', rgb: [217, 255, 217] },
+                { name: 'H110', rgb: [204, 255, 204] },
+                { name: 'H111', rgb: [191, 255, 191] },
+                { name: 'H112', rgb: [179, 255, 179] },
+                { name: 'H113', rgb: [166, 255, 166] },
+                { name: 'H114', rgb: [153, 255, 153] },
+                { name: 'H115', rgb: [140, 255, 140] },
+                { name: 'H116', rgb: [128, 255, 128] },
+                { name: 'H117', rgb: [115, 255, 115] },
+                { name: 'H118', rgb: [102, 255, 102] },
+                { name: 'H119', rgb: [89, 255, 89] },
+                { name: 'H120', rgb: [77, 255, 77] },
+                { name: 'H121', rgb: [64, 255, 64] },
+                { name: 'H122', rgb: [51, 255, 51] },
+                { name: 'H123', rgb: [38, 255, 38] },
+                { name: 'H124', rgb: [26, 255, 26] },
+                { name: 'H125', rgb: [13, 255, 13] },
+                { name: 'H126', rgb: [0, 255, 0] },
+                { name: 'H127', rgb: [0, 230, 0] },
+                { name: 'H128', rgb: [0, 204, 0] },
+                { name: 'H129', rgb: [0, 179, 0] },
+                { name: 'H130', rgb: [0, 153, 0] },
+                { name: 'H131', rgb: [0, 128, 0] },
+                { name: 'H132', rgb: [0, 102, 0] },
+                { name: 'H133', rgb: [0, 77, 0] },
+                { name: 'H134', rgb: [0, 51, 0] },
+                { name: 'H135', rgb: [242, 242, 255] },
+                { name: 'H136', rgb: [229, 229, 255] },
+                { name: 'H137', rgb: [217, 217, 255] },
+                { name: 'H138', rgb: [204, 204, 255] },
+                { name: 'H139', rgb: [191, 191, 255] },
+                { name: 'H140', rgb: [179, 179, 255] },
+                { name: 'H141', rgb: [166, 166, 255] },
+                { name: 'H142', rgb: [153, 153, 255] },
+                { name: 'H143', rgb: [140, 140, 255] },
+                { name: 'H144', rgb: [128, 128, 255] },
+                { name: 'H145', rgb: [115, 115, 255] },
+                { name: 'H146', rgb: [102, 102, 255] },
+                { name: 'H147', rgb: [89, 89, 255] },
+                { name: 'H148', rgb: [77, 77, 255] },
+                { name: 'H149', rgb: [64, 64, 255] },
+                { name: 'H150', rgb: [51, 51, 255] },
+                { name: 'H151', rgb: [38, 38, 255] },
+                { name: 'H152', rgb: [26, 26, 255] },
+                { name: 'H153', rgb: [13, 13, 255] },
+                { name: 'H154', rgb: [0, 0, 255] },
+                { name: 'H155', rgb: [0, 0, 230] },
+                { name: 'H156', rgb: [0, 0, 204] },
+                { name: 'H157', rgb: [0, 0, 179] },
+                { name: 'H158', rgb: [0, 0, 153] },
+                { name: 'H159', rgb: [0, 0, 128] },
+                { name: 'H160', rgb: [0, 0, 102] },
+                { name: 'H161', rgb: [0, 0, 77] },
+                { name: 'H162', rgb: [0, 0, 51] },
+                { name: 'H163', rgb: [255, 242, 255] },
+                { name: 'H164', rgb: [255, 229, 255] },
+                { name: 'H165', rgb: [255, 217, 255] },
+                { name: 'H166', rgb: [255, 204, 255] },
+                { name: 'H167', rgb: [255, 191, 255] },
+                { name: 'H168', rgb: [255, 179, 255] },
+                { name: 'H169', rgb: [255, 166, 255] },
+                { name: 'H170', rgb: [255, 153, 255] },
+                { name: 'H171', rgb: [255, 140, 255] },
+                { name: 'H172', rgb: [255, 128, 255] },
+                { name: 'H173', rgb: [255, 115, 255] },
+                { name: 'H174', rgb: [255, 102, 255] },
+                { name: 'H175', rgb: [255, 89, 255] },
+                { name: 'H176', rgb: [255, 77, 255] },
+                { name: 'H177', rgb: [255, 64, 255] },
+                { name: 'H178', rgb: [255, 51, 255] },
+                { name: 'H179', rgb: [255, 38, 255] },
+                { name: 'H180', rgb: [255, 26, 255] },
+                { name: 'H181', rgb: [255, 13, 255] },
+                { name: 'H182', rgb: [255, 0, 255] },
+                { name: 'H183', rgb: [230, 0, 230] },
+                { name: 'H184', rgb: [204, 0, 204] },
+                { name: 'H185', rgb: [179, 0, 179] },
+                { name: 'H186', rgb: [153, 0, 153] },
+                { name: 'H187', rgb: [128, 0, 128] },
+                { name: 'H188', rgb: [102, 0, 102] }
+            ],
+            mard221: []
+        };
+
+        colorPalettes.mard221 = [...colorPalettes.mard188];
+
+        let uploadedImage = null;
+        let generatedPattern = null;
+
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        uploadedImage = img;
+                        document.getElementById('generateBtn').disabled = false;
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('generateBtn').addEventListener('click', function() {
+            if (!uploadedImage) return;
+
+            const pixelSize = parseInt(document.getElementById('pixelSize').value);
+            const maxColors = parseInt(document.getElementById('maxColors').value);
+            const showColorName = document.getElementById('showColorName').checked;
+            const fontSize = parseInt(document.getElementById('fontSize').value);
+            const paletteName = document.getElementById('colorPalette').value;
+            const palettePosition = document.getElementById('palettePosition').value;
+            
+            const palette = colorPalettes[paletteName];
+            
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('canvasContainer').style.display = 'none';
+            document.getElementById('paletteSection').style.display = 'none';
+            document.getElementById('stats').style.display = 'none';
+            
+            setTimeout(() => {
+                generatePattern(uploadedImage, pixelSize, maxColors, showColorName, fontSize, palette, palettePosition);
+                document.getElementById('loading').classList.remove('active');
+            }, 100);
+        });
+
+        function generatePattern(img, pixelSize, maxColors, showColorName, fontSize, palette, palettePosition) {
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            const size = Math.min(img.width, img.height);
+            const cropX = Math.floor((img.width - size) / 2);
+            const cropY = Math.floor((img.height - size) / 2);
+            
+            tempCanvas.width = size;
+            tempCanvas.height = size;
+            tempCtx.drawImage(img, cropX, cropY, size, size, 0, 0, size, size);
+            
+            const imageData = tempCtx.getImageData(0, 0, size, size);
+            const pixels = imageData.data;
+            
+            const blockSize = Math.floor(size / pixelSize);
+            const gridColors = [];
+            
+            for (let gy = 0; gy < pixelSize; gy++) {
+                gridColors[gy] = [];
+                for (let gx = 0; gx < pixelSize; gx++) {
+                    let r = 0, g = 0, b = 0, count = 0;
+                    
+                    for (let y = gy * blockSize; y < (gy + 1) * blockSize && y < size; y++) {
+                        for (let x = gx * blockSize; x < (gx + 1) * blockSize && x < size; x++) {
+                            const idx = (y * size + x) * 4;
+                            r += pixels[idx];
+                            g += pixels[idx + 1];
+                            b += pixels[idx + 2];
+                            count++;
+                        }
+                    }
+                    
+                    gridColors[gy][gx] = {
+                        r: Math.round(r / count),
+                        g: Math.round(g / count),
+                        b: Math.round(b / count)
+                    };
+                }
+            }
+            
+            const colorCounts = {};
+            const matchedGrid = [];
+            
+            for (let gy = 0; gy < pixelSize; gy++) {
+                matchedGrid[gy] = [];
+                for (let gx = 0; gx < pixelSize; gx++) {
+                    const pixel = gridColors[gy][gx];
+                    let minDist = Infinity;
+                    let bestColor = null;
+                    
+                    for (const color of palette) {
+                        const dist = Math.sqrt(
+                            Math.pow(pixel.r - color.rgb[0], 2) +
+                            Math.pow(pixel.g - color.rgb[1], 2) +
+                            Math.pow(pixel.b - color.rgb[2], 2)
+                        );
+                        
+                        if (dist < minDist) {
+                            minDist = dist;
+                            bestColor = color;
+                        }
+                    }
+                    
+                    matchedGrid[gy][gx] = bestColor;
+                    colorCounts[bestColor.name] = (colorCounts[bestColor.name] || 0) + 1;
+                }
+            }
+            
+            const sortedColors = Object.entries(colorCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, maxColors);
+            
+            const usedColors = new Set(sortedColors.map(([name]) => name));
+            const usedPalette = palette.filter(c => usedColors.has(c.name));
+            
+            const finalGrid = [];
+            const finalCounts = {};
+            
+            for (let gy = 0; gy < pixelSize; gy++) {
+                finalGrid[gy] = [];
+                for (let gx = 0; gx < pixelSize; gx++) {
+                    const pixel = gridColors[gy][gx];
+                    let minDist = Infinity;
+                    let bestColor = null;
+                    
+                    for (const color of usedPalette) {
+                        const dist = Math.sqrt(
+                            Math.pow(pixel.r - color.rgb[0], 2) +
+                            Math.pow(pixel.g - color.rgb[1], 2) +
+                            Math.pow(pixel.b - color.rgb[2], 2)
+                        );
+                        
+                        if (dist < minDist) {
+                            minDist = dist;
+                            bestColor = color;
+                        }
+                    }
+                    
+                    finalGrid[gy][gx] = bestColor;
+                    finalCounts[bestColor.name] = (finalCounts[bestColor.name] || 0) + 1;
+                }
+            }
+            
+            drawPattern(finalGrid, pixelSize, showColorName, fontSize, usedPalette, finalCounts, palettePosition);
+            
+            document.getElementById('statSize').textContent = `${pixelSize}×${pixelSize}`;
+            document.getElementById('statColors').textContent = Object.keys(finalCounts).length;
+            document.getElementById('statPixels').textContent = pixelSize * pixelSize;
+            document.getElementById('stats').style.display = 'grid';
+            
+            displayPalette(usedPalette, finalCounts);
+            
+            generatedPattern = {
+                grid: finalGrid,
+                size: pixelSize,
+                showColorName: showColorName,
+                fontSize: fontSize,
+                palette: usedPalette,
+                counts: finalCounts,
+                palettePosition: palettePosition
+            };
+            
+            document.getElementById('downloadBtn').disabled = false;
+        }
+
+        function drawPattern(grid, pixelSize, showColorName, fontSize, palette, counts, palettePosition) {
+            const canvas = document.getElementById('patternCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            const cellSize = 20;
+            const padding = 40;
+            const paletteWidth = palettePosition === 'right' ? 200 : 0;
+            const paletteHeight = palettePosition === 'bottom' ? 150 : 0;
+            
+            canvas.width = pixelSize * cellSize + padding * 2 + paletteWidth;
+            canvas.height = pixelSize * cellSize + padding * 2 + paletteHeight;
+            
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            for (let y = 0; y < pixelSize; y++) {
+                for (let x = 0; x < pixelSize; x++) {
+                    const color = grid[y][x];
+                    const px = padding + x * cellSize;
+                    const py = padding + y * cellSize;
+                    
+                    ctx.fillStyle = `rgb(${color.rgb[0]}, ${color.rgb[1]}, ${color.rgb[2]})`;
+                    ctx.fillRect(px, py, cellSize, cellSize);
+                    
+                    ctx.strokeStyle = '#ddd';
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeRect(px, py, cellSize, cellSize);
+                    
+                    if (showColorName) {
+                        const textColor = (color.rgb[0] + color.rgb[1] + color.rgb[2]) / 3 < 384 ? 'white' : 'black';
+                        ctx.fillStyle = textColor;
+                        ctx.font = `${fontSize}px Arial`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(color.name, px + cellSize / 2, py + cellSize / 2);
+                    }
+                }
+            }
+            
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1.5;
+            for (let i = 0; i <= pixelSize; i += 5) {
+                ctx.beginPath();
+                ctx.moveTo(padding + i * cellSize, padding);
+                ctx.lineTo(padding + i * cellSize, padding + pixelSize * cellSize);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(padding, padding + i * cellSize);
+                ctx.lineTo(padding + pixelSize * cellSize, padding + i * cellSize);
+                ctx.stroke();
+            }
+            
+            ctx.fillStyle = '#667eea';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            for (let i = 1; i <= pixelSize; i++) {
+                ctx.fillText(i, padding + (i - 0.5) * cellSize, padding - 20);
+                ctx.fillText(i, padding - 20, padding + (i - 0.5) * cellSize);
+            }
+            
+            if (palettePosition === 'bottom') {
+                drawPaletteBottom(ctx, canvas, padding, pixelSize, cellSize, palette, counts, fontSize);
+            } else {
+                drawPaletteRight(ctx, canvas, padding, pixelSize, cellSize, palette, counts, fontSize);
+            }
+            
+            document.getElementById('canvasContainer').style.display = 'block';
+        }
+
+        function drawPaletteBottom(ctx, canvas, padding, pixelSize, cellSize, palette, counts, fontSize) {
+            const startY = padding + pixelSize * cellSize + 20;
+            const cols = Math.floor((canvas.width - padding * 2) / 100);
+            
+            ctx.fillStyle = '#667eea';
+            ctx.fillRect(padding - 10, startY - 10, canvas.width - padding * 2 + 20, 130);
+            
+            palette.forEach((color, i) => {
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+                const x = padding + col * 100;
+                const y = startY + row * 35;
+                
+                ctx.fillStyle = `rgb(${color.rgb[0]}, ${color.rgb[1]}, ${color.rgb[2]})`;
+                ctx.fillRect(x, y, 25, 25);
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, 25, 25);
+                
+                const textColor = (color.rgb[0] + color.rgb[1] + color.rgb[2]) / 3 < 384 ? 'white' : 'black';
+                ctx.fillStyle = textColor;
+                ctx.font = `${fontSize + 1}px Arial`;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`${color.name} (${counts[color.name]})`, x + 30, y + 12);
+            });
+        }
+
+        function drawPaletteRight(ctx, canvas, padding, pixelSize, cellSize, palette, counts, fontSize) {
+            const startX = padding + pixelSize * cellSize + 20;
+            const rows = Math.floor((canvas.height - padding * 2) / 35);
+            
+            ctx.fillStyle = '#667eea';
+            ctx.fillRect(startX - 10, padding - 10, 180, canvas.height - padding * 2 + 20);
+            
+            palette.forEach((color, i) => {
+                const row = i % rows;
+                const col = Math.floor(i / rows);
+                const x = startX + col * 170;
+                const y = padding + row * 35;
+                
+                ctx.fillStyle = `rgb(${color.rgb[0]}, ${color.rgb[1]}, ${color.rgb[2]})`;
+                ctx.fillRect(x, y, 25, 25);
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, 25, 25);
+                
+                const textColor = (color.rgb[0] + color.rgb[1] + color.rgb[2]) / 3 < 384 ? 'white' : 'black';
+                ctx.fillStyle = textColor;
+                ctx.font = `${fontSize + 1}px Arial`;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`${color.name} (${counts[color.name]})`, x + 30, y + 12);
+            });
+        }
+
+        function displayPalette(palette, counts) {
+            const colorList = document.getElementById('colorList');
+            colorList.innerHTML = '';
+            
+            palette.forEach(color => {
+                const item = document.createElement('div');
+                item.className = 'color-item';
+                item.innerHTML = `
+                    <div class="color-box" style="background: rgb(${color.rgb[0]}, ${color.rgb[1]}, ${color.rgb[2]})"></div>
+                    <div class="color-info">
+                        <div class="color-name">${color.name}</div>
+                        <div class="color-count">${counts[color.name]} 颗</div>
+                    </div>
+                `;
+                colorList.appendChild(item);
+            });
+            
+            document.getElementById('paletteSection').style.display = 'block';
+        }
+
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            if (!generatedPattern) return;
+            
+            const canvas = document.getElementById('patternCanvas');
+            const link = document.createElement('a');
+            link.download = '拼豆图纸.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    </script>
+</body>
+</html>
