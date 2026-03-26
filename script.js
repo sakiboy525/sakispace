@@ -46,11 +46,6 @@ class BeadPatternGenerator {
             this.downloadPattern();
         });
         
-        // 导出统计
-        document.getElementById('exportStats').addEventListener('click', () => {
-            this.exportColorStats();
-        });
-        
         // 配置参数变化
         document.getElementById('pixelSize').addEventListener('change', (e) => {
             this.config.pixN = parseInt(e.target.value);
@@ -58,18 +53,6 @@ class BeadPatternGenerator {
         
         document.getElementById('maxColors').addEventListener('change', (e) => {
             this.config.maxC = parseInt(e.target.value);
-        });
-        
-        document.getElementById('showColorName').addEventListener('change', (e) => {
-            this.config.showCName = e.target.checked;
-        });
-        
-        document.getElementById('fontSize').addEventListener('change', (e) => {
-            this.config.fontSZ = parseInt(e.target.value);
-        });
-        
-        document.getElementById('palettePosition').addEventListener('change', (e) => {
-            this.config.palettePos = e.target.value;
         });
         
         document.getElementById('colorPalette').addEventListener('change', (e) => {
@@ -91,9 +74,6 @@ class BeadPatternGenerator {
     updateUI() {
         document.getElementById('pixelSize').value = this.config.pixN;
         document.getElementById('maxColors').value = this.config.maxC;
-        document.getElementById('showColorName').checked = this.config.showCName;
-        document.getElementById('fontSize').value = this.config.fontSZ;
-        document.getElementById('palettePosition').value = this.config.palettePos;
         document.getElementById('colorPalette').value = this.config.palette;
     }
     
@@ -312,14 +292,14 @@ class BeadPatternGenerator {
                             <img src="${e.target.result}" alt="预览图片" class="preview-image">
                             <div class="preview-info">
                                 <span class="preview-size">${img.width} × ${img.height}</span>
-                                <button class="btn-remove" onclick="document.getElementById('imageInput').value=''; document.getElementById('imagePreview').innerHTML='';">移除</button>
+                                <button class="btn-remove" onclick="beadGenerator.removeImage()">移除</button>
                             </div>
                         </div>
                     `;
                     previewContainer.style.display = 'block';
                 }
                 
-                // 更新上传区域状态
+                // 隐藏上传区域
                 const uploadArea = document.querySelector('.upload-area');
                 if (uploadArea) {
                     uploadArea.classList.add('has-image');
@@ -334,6 +314,47 @@ class BeadPatternGenerator {
             alert('文件读取失败，请重试');
         };
         reader.readAsDataURL(file);
+    }
+    
+    removeImage() {
+        this.uploadedImage = null;
+        document.getElementById('generateBtn').disabled = true;
+        document.getElementById('downloadBtn').disabled = true;
+        
+        // 清空预览区域
+        const previewContainer = document.getElementById('imagePreview');
+        if (previewContainer) {
+            previewContainer.innerHTML = '';
+            previewContainer.style.display = 'none';
+        }
+        
+        // 显示上传区域
+        const uploadArea = document.querySelector('.upload-area');
+        if (uploadArea) {
+            uploadArea.classList.remove('has-image');
+        }
+        
+        // 重置文件输入
+        const imageInput = document.getElementById('imageInput');
+        if (imageInput) {
+            imageInput.value = '';
+        }
+        
+        // 隐藏已生成的图纸
+        const canvasContainer = document.getElementById('canvasContainer');
+        if (canvasContainer) {
+            canvasContainer.style.display = 'none';
+        }
+        
+        const paletteSection = document.getElementById('paletteSection');
+        if (paletteSection) {
+            paletteSection.style.display = 'none';
+        }
+        
+        const stats = document.getElementById('stats');
+        if (stats) {
+            stats.style.display = 'none';
+        }
     }
     
     generatePattern() {
@@ -687,6 +708,7 @@ class BeadPatternGenerator {
 }
 
 // 初始化
+let beadGenerator;
 document.addEventListener('DOMContentLoaded', () => {
-    new BeadPatternGenerator();
+    beadGenerator = new BeadPatternGenerator();
 });

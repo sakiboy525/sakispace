@@ -56,12 +56,12 @@
         .upload-area {
             border: 2px dashed #667eea;
             border-radius: 12px;
-            padding: 30px 20px;
+            padding: 20px 15px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
             background: #f8f9ff;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .upload-area:active {
@@ -74,25 +74,24 @@
         }
 
         .upload-icon {
-            font-size: 48px;
-            margin-bottom: 10px;
+            font-size: 36px;
+            margin-bottom: 8px;
         }
 
         .upload-text {
-            font-size: 15px;
+            font-size: 14px;
             color: #667eea;
             font-weight: 500;
         }
 
         .upload-hint {
-            font-size: 12px;
+            font-size: 11px;
             color: #999;
-            margin-top: 5px;
+            margin-top: 4px;
         }
 
         .upload-area.has-image {
-            border-color: #38ef7d;
-            background: #f0fff4;
+            display: none;
         }
 
         .image-preview {
@@ -173,6 +172,10 @@
 
         .control-row:last-child {
             margin-bottom: 0;
+        }
+
+        .control-row.full-width {
+            grid-template-columns: 1fr;
         }
 
         .control-group {
@@ -542,7 +545,7 @@
                     </div>
                 </div>
                 
-                <div class="control-row">
+                <div class="control-row full-width">
                     <div class="control-group">
                         <label for="colorPalette">色卡选择</label>
                         <select id="colorPalette">
@@ -550,29 +553,8 @@
                             <option value="mard221">MARD 221色</option>
                         </select>
                     </div>
-                    
-                    <div class="control-group">
-                        <label for="palettePosition">色号位置</label>
-                        <select id="palettePosition">
-                            <option value="bottom">底部</option>
-                            <option value="right">右侧</option>
-                        </select>
-                    </div>
                 </div>
-                
-                <div class="control-row">
-                    <div class="control-group">
-                        <label for="fontSize">字体大小</label>
-                        <input type="number" id="fontSize" value="7" min="5" max="15">
-                    </div>
-                    
-                    <div class="control-group">
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="showColorName" checked>
-                            <label for="showColorName">显示色号</label>
-                        </div>
-                    </div>
-                </div>
+            
             </div>
             
             <!-- 操作按钮 -->
@@ -622,10 +604,8 @@
             <div class="tips">
                 <h4>💡 使用提示</h4>
                 <ul>
-                    <li>建议使用边缘清晰的图片效果更佳</li>
-                    <li>画布尺寸不建议超过50，否则色号显示不清晰</li>
-                    <li>颜色数量越少，效果越简洁，制作越容易</li>
-                    <li>非正方形图片会自动居中裁剪</li>
+                    <li>建议使用线条边缘清晰的图片</li>
+                    <li>非正方形图片会自动居中剪裁</li>
                 </ul>
             </div>
         </div>
@@ -832,6 +812,49 @@
         let uploadedImage = null;
         let generatedPattern = null;
 
+        // 移除图片的函数
+        function removeImage() {
+            uploadedImage = null;
+            generatedPattern = null;
+            document.getElementById('generateBtn').disabled = true;
+            document.getElementById('downloadBtn').disabled = true;
+            
+            // 清空预览区域
+            const previewContainer = document.getElementById('imagePreview');
+            if (previewContainer) {
+                previewContainer.innerHTML = '';
+                previewContainer.style.display = 'none';
+            }
+            
+            // 显示上传区域
+            const uploadArea = document.querySelector('.upload-area');
+            if (uploadArea) {
+                uploadArea.classList.remove('has-image');
+            }
+            
+            // 重置文件输入
+            const imageInput = document.getElementById('imageInput');
+            if (imageInput) {
+                imageInput.value = '';
+            }
+            
+            // 隐藏已生成的图纸和统计
+            const canvasContainer = document.getElementById('canvasContainer');
+            if (canvasContainer) {
+                canvasContainer.style.display = 'none';
+            }
+            
+            const paletteSection = document.getElementById('paletteSection');
+            if (paletteSection) {
+                paletteSection.style.display = 'none';
+            }
+            
+            const stats = document.getElementById('stats');
+            if (stats) {
+                stats.style.display = 'none';
+            }
+        }
+
         document.getElementById('imageInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -841,6 +864,27 @@
                     img.onload = function() {
                         uploadedImage = img;
                         document.getElementById('generateBtn').disabled = false;
+                        
+                        // 显示图片预览
+                        const previewContainer = document.getElementById('imagePreview');
+                        if (previewContainer) {
+                            previewContainer.innerHTML = `
+                                <div class="preview-wrapper">
+                                    <img src="${event.target.result}" alt="预览图片" class="preview-image">
+                                    <div class="preview-info">
+                                        <span class="preview-size">${img.width} × ${img.height}</span>
+                                        <button class="btn-remove" onclick="removeImage()">移除</button>
+                                    </div>
+                                </div>
+                            `;
+                            previewContainer.style.display = 'block';
+                        }
+                        
+                        // 隐藏上传区域
+                        const uploadArea = document.querySelector('.upload-area');
+                        if (uploadArea) {
+                            uploadArea.classList.add('has-image');
+                        }
                     };
                     img.src = event.target.result;
                 };
@@ -853,10 +897,12 @@
 
             const pixelSize = parseInt(document.getElementById('pixelSize').value);
             const maxColors = parseInt(document.getElementById('maxColors').value);
-            const showColorName = document.getElementById('showColorName').checked;
-            const fontSize = parseInt(document.getElementById('fontSize').value);
             const paletteName = document.getElementById('colorPalette').value;
-            const palettePosition = document.getElementById('palettePosition').value;
+            
+            // 默认值：显示色号=true, 字体大小=7, 色号位置=bottom
+            const showColorName = true;
+            const fontSize = 7;
+            const palettePosition = 'bottom';
             
             const palette = colorPalettes[paletteName];
             
